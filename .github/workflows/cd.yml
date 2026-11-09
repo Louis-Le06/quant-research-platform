@@ -1,0 +1,148 @@
+name: CD
+
+# Runs after CI succeeds on main (i.e. after a PR is merged), or manually.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write   # push images to GitHub Container Registry (ghcr.io)
+
+jobs:
+  # ------------------------------------------------------------------
+  images:
+    name: Build & push ${{ matrix.image }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        image: [api, dashboard]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Compute tags
+        id: meta
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          echo "repo=ghcr.io/${OWNER}/quant-${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+          echo "sha=${SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image }}/Dockerfile
+          push: true
+          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
+          tags: |
+            ${{ steps.meta.outputs.repo }}:latest
+            ${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      - name: Export image for Minikube
+        run: |
+          docker pull ${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.sha }}
+          docker tag  ${{ steps.meta.outputs.repo }}:${{ steps.meta.outputs.sha }} quant-${{ matrix.image }}:latest
+          docker save quant-${{ matrix.image }}:latest -o quant-${{ matrix.image }}.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-${{ matrix.image }}
+          path: quant-${{ matrix.image }}.tar
+          retention-days: 1
+
+  # ------------------------------------------------------------------
+  deploy:
+    name: Deploy to Minikube
+    needs: images
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Start Minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          driver: docker
+          cpus: 2
+          memory: 4096m
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: image-*
+          merge-multiple: true
+
+      - name: Load images into Minikube
+        run: |
+          for img in api dashboard; do
+            docker load -i quant-$img.tar
+            minikube image load quant-$img:latest
+          done
+          minikube image ls | grep quant-
+
+      - name: Deploy manifests
+        run: |
+          kubectl apply -k k8s/
+          kubectl -n quant set env deployment/quant-api APP_VERSION=1.0.${{ github.run_number }}
+          kubectl -n quant rollout status deployment/quant-api --timeout=240s
+          kubectl -n quant rollout status deployment/quant-dashboard --timeout=240s
+
+      - name: Cluster status
+        run: |
+          kubectl get nodes -o wide
+          kubectl -n quant get deploy,rs,pods,svc,cm -o wide
+
+      - name: Smoke test
+        run: |
+          kubectl -n quant port-forward svc/quant-api 18000:8000 >/dev/null 2>&1 &
+          sleep 3
+          DASH_URL=$(minikube service quant-dashboard -n quant --url | head -n1)
+          ./scripts/smoke-test.sh http://127.0.0.1:18000 "$DASH_URL" | tee smoke.log
+
+      - name: Rolling update test (zero downtime)
+        run: |
+          kubectl -n quant rollout restart deployment/quant-api
+          kubectl -n quant rollout status deployment/quant-api --timeout=240s
+          kubectl -n quant rollout history deployment/quant-api
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## 🚀 Minikube deployment"
+            echo '```'
+            kubectl -n quant get deploy,pods,svc -o wide || true
+            echo '```'
+            echo "## ✅ Smoke test"
+            echo '```'
+            cat smoke.log 2>/dev/null || echo "(no log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          kubectl -n quant describe pods | tail -80
+          kubectl -n quant logs -l 'app in (quant-api,quant-dashboard)' --tail=100 --prefix || true

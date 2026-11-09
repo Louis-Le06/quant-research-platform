@@ -1,0 +1,14 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.13"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "quant-engine"
+version = "1.0.0"
+description = "C++ quant engine (Black-Scholes, risk analytics, backtesting) exposed to Python via pybind11"
+requires-python = ">=3.10"
+
+[tool.scikit-build]
+cmake.version = ">=3.18"
+cmake.build-type = "Release"
+wheel.license-files = []

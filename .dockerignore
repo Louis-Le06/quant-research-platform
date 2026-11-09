@@ -1,0 +1,14 @@
+**/build/
+**/build-*/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+# engine/tests is KEPT: GoogleTest runs during the image build
+api/tests/
+dashboard/tests/
+.git/
+.github/
+docs/
+k8s/
+scripts/
+*.md
