@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Cache GoogleTest
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: engine/build/_deps
           key: gtest-${{ matrix.compiler }}-${{ hashFiles('engine/CMakeLists.txt') }}
