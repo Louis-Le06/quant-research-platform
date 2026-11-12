@@ -30,11 +30,12 @@ kubectl -n "$NS" get deploy,rs,pods,svc,cm -o wide
 
 step "6. Smoke test"
 kubectl -n "$NS" port-forward svc/quant-api 18000:8000 >/dev/null 2>&1 &
-PF=$!
-trap 'kill $PF 2>/dev/null || true' EXIT
+PF_API=$!
+kubectl -n "$NS" port-forward svc/quant-dashboard 18050:8050 >/dev/null 2>&1 &
+PF_DASH=$!
+trap 'kill $PF_API $PF_DASH 2>/dev/null || true' EXIT
 sleep 3
-DASH_URL=$(minikube service quant-dashboard -n "$NS" --url | head -n1)
-bash scripts/smoke-test.sh http://127.0.0.1:18000 "$DASH_URL"
+bash scripts/smoke-test.sh http://127.0.0.1:18000 http://127.0.0.1:18050
 
-step "Done! Open the dashboard:  $DASH_URL"
-echo "   (or: minikube service quant-dashboard -n $NS)"
+step "Done! Open the dashboard with:"
+echo "   kubectl -n $NS port-forward svc/quant-dashboard 8050:8050   ->  http://localhost:8050"
