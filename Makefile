@@ -45,10 +45,10 @@ compose:  ## Run the whole stack with Docker Compose
 	docker compose up --build
 
 deploy:  ## Build images and deploy to Minikube
-	./scripts/deploy-minikube.sh
+	bash scripts/deploy-minikube.sh
 
 smoke:  ## Smoke-test the local stack
-	./scripts/smoke-test.sh http://localhost:8000 http://localhost:8050
+	bash scripts/smoke-test.sh http://localhost:8000 http://localhost:8050
 
 clean:  ## Remove build artefacts
 	rm -rf engine/build engine/build-* **/__pycache__ .pytest_cache

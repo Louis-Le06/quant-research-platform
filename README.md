@@ -1,11 +1,10 @@
 # Quant Research Platform
 
-[![CI](https://github.com/<OWNER>/<REPO>/actions/workflows/ci.yml/badge.svg)](https://github.com/<OWNER>/<REPO>/actions/workflows/ci.yml)
-[![CD](https://github.com/<OWNER>/<REPO>/actions/workflows/cd.yml/badge.svg)](https://github.com/<OWNER>/<REPO>/actions/workflows/cd.yml)
+[![CI](https://github.com/Louis-Le06/quant-research-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Louis-Le06/quant-research-platform/actions/workflows/ci.yml)
+[![CD](https://github.com/Louis-Le06/quant-research-platform/actions/workflows/cd.yml/badge.svg)](https://github.com/Louis-Le06/quant-research-platform/actions/workflows/cd.yml)
 
 A small quantitative research platform. A **C++17 engine** prices European options (Black-Scholes, Greeks, implied volatility), computes risk metrics and backtests trading strategies. It is exposed to Python through **pybind11**, served by **FastAPI** and visualised in a **Dash** dashboard. Everything is containerised with **Docker**, deployed to **Kubernetes (Minikube)**, tested with **GoogleTest + pytest** and automated with **GitHub Actions**.
 
-> Replace `<OWNER>/<REPO>` in the badges above and `<OWNER>` in `.github/CODEOWNERS` with your GitHub account/repository.
 
 ![Dashboard](docs/screenshots/dashboard-preview.png)
 
@@ -112,7 +111,7 @@ minikube service quant-dashboard -n quant
 ```bash
 git init && git add . && git commit -m "feat: initial quant research platform"
 git branch -M main
-git remote add origin https://github.com/<OWNER>/<REPO>.git
+git remote add origin https://github.com/Louis-Le06/quant-research-platform.git
 git push -u origin main
 ```
 

@@ -34,7 +34,7 @@ PF=$!
 trap 'kill $PF 2>/dev/null || true' EXIT
 sleep 3
 DASH_URL=$(minikube service quant-dashboard -n "$NS" --url | head -n1)
-./scripts/smoke-test.sh http://127.0.0.1:18000 "$DASH_URL"
+bash scripts/smoke-test.sh http://127.0.0.1:18000 "$DASH_URL"
 
 step "Done! Open the dashboard:  $DASH_URL"
 echo "   (or: minikube service quant-dashboard -n $NS)"

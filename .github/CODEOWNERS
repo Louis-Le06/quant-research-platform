@@ -1,13 +1,12 @@
 # PRs touching these paths automatically request a review from the listed owners.
-# Replace <OWNER> with your GitHub username (and add teammates/reviewers).
 
-*                   @<OWNER>
+*                   @Louis-Le06
 
-/engine/            @<OWNER>
-/api/               @<OWNER>
-/dashboard/         @<OWNER>
+/engine/            @Louis-Le06
+/api/               @Louis-Le06
+/dashboard/         @Louis-Le06
 
 # Infrastructure changes deserve extra scrutiny
-/.github/           @<OWNER>
-/k8s/               @<OWNER>
-**/Dockerfile       @<OWNER>
+/.github/           @Louis-Le06
+/k8s/               @Louis-Le06
+**/Dockerfile       @Louis-Le06

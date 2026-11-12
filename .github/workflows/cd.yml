@@ -119,7 +119,7 @@ jobs:
           kubectl -n quant port-forward svc/quant-api 18000:8000 >/dev/null 2>&1 &
           sleep 3
           DASH_URL=$(minikube service quant-dashboard -n quant --url | head -n1)
-          ./scripts/smoke-test.sh http://127.0.0.1:18000 "$DASH_URL" | tee smoke.log
+          bash scripts/smoke-test.sh http://127.0.0.1:18000 "$DASH_URL" | tee smoke.log
 
       - name: Rolling update test (zero downtime)
         run: |
