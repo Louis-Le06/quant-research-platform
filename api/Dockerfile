@@ -2,7 +2,7 @@
 # =====================================================================
 # Stage 1: build the C++ engine -> run GoogleTest -> build the Python wheel
 # =====================================================================
-FROM python:3.12-slim AS engine-builder
+FROM python:3.15-slim AS engine-builder
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends g++ cmake make git ca-certificates \
@@ -22,7 +22,7 @@ RUN pip wheel --no-cache-dir --wheel-dir /wheels ./engine
 # =====================================================================
 # Stage 2: runtime — no compiler, runs as a non-root user
 # =====================================================================
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 ARG APP_VERSION=1.0.0
 LABEL org.opencontainers.image.title="quant-api" \
